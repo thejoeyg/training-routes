@@ -240,6 +240,10 @@ label {
   border-radius: var(--radius);
 }
 
+#route-info[hidden] {
+  display: none;
+}
+
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -270,6 +274,10 @@ label {
   transition: background 0.15s;
 }
 
+#google-maps-link[hidden] {
+  display: none;
+}
+
 #google-maps-link:hover {
   background: #2d9249;
 }
@@ -278,6 +286,10 @@ label {
 #directions {
   display: flex;
   flex-direction: column;
+}
+
+#directions[hidden] {
+  display: none;
 }
 
 #directions-toggle {
@@ -374,6 +386,10 @@ label {
   color: var(--text-muted);
 }
 
+#loading[hidden] {
+  display: none;
+}
+
 .spinner {
   width: 18px;
   height: 18px;
@@ -394,6 +410,10 @@ label {
   border-radius: var(--radius);
   color: var(--error);
   font-size: 0.85rem;
+}
+
+#error[hidden] {
+  display: none;
 }
 
 /* Mobile: bottom sheet */
