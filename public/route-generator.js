@@ -138,3 +138,19 @@ function adjustWaypoints(startLat, startLng, distanceMiles, actualDistanceMeters
 
   return generateWaypoints(startLat, startLng, distanceMiles, adjustedRadius, boundary);
 }
+
+// Export for testing (no-op in browser)
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = {
+    generateWaypoints,
+    adjustWaypoints,
+    pointInPolygon,
+    nearestPointOnPolygon,
+    projectToSegment,
+    polygonCentroid,
+    getWaypointCount,
+    METERS_PER_MILE,
+    METERS_PER_DEGREE_LAT,
+    ROAD_WINDING_FACTOR
+  };
+}
