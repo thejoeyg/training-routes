@@ -214,7 +214,7 @@ async function computeRoute(isRegenerate) {
     let waypoints;
     let routeData;
     let attempts = 0;
-    const maxAttempts = 3;
+    const maxAttempts = 4;
     let lastRadius = null;
 
     while (attempts < maxAttempts) {
@@ -223,10 +223,11 @@ async function computeRoute(isRegenerate) {
       if (attempts === 1 || !lastActualDistanceMeters) {
         waypoints = generateWaypoints(startLocation.lat, startLocation.lng, distanceMiles, null, boundaryVertices);
       } else {
-        // Adjust based on previous result
+        // Adjust based on previous result, biasing toward longer routes
         const targetMeters = distanceMiles * 1609.34;
-        const ratio = targetMeters / lastActualDistanceMeters;
-        const baseRadius = (distanceMiles * 1609.34) / (2 * Math.PI * 1.3);
+        const biasedTarget = targetMeters * 1.05; // 5% overshoot bias
+        const ratio = biasedTarget / lastActualDistanceMeters;
+        const baseRadius = (distanceMiles * 1609.34) / (2 * Math.PI * 1.15);
         const adjustedRadius = (lastRadius || baseRadius) * Math.sqrt(ratio);
         lastRadius = adjustedRadius;
         waypoints = generateWaypoints(startLocation.lat, startLocation.lng, distanceMiles, adjustedRadius, boundaryVertices);
@@ -252,9 +253,14 @@ async function computeRoute(isRegenerate) {
       lastActualDistanceMeters = routeData.distanceMeters;
 
       const targetMeters = distanceMiles * 1609.34;
-      const pctDiff = Math.abs(lastActualDistanceMeters - targetMeters) / targetMeters;
+      const diff = lastActualDistanceMeters - targetMeters;
+      const pctDiff = diff / targetMeters;
 
-      if (pctDiff <= 0.10 || attempts >= maxAttempts) {
+      // Asymmetric tolerance: accept up to 10% too long, but only 3% too short
+      const tooLong = pctDiff > 0.10;
+      const tooShort = pctDiff < -0.03;
+
+      if ((!tooLong && !tooShort) || attempts >= maxAttempts) {
         break;
       }
     }

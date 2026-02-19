@@ -1,6 +1,7 @@
 const METERS_PER_MILE = 1609.34;
 const METERS_PER_DEGREE_LAT = 111320;
-const ROAD_WINDING_FACTOR = 1.3;
+const ROAD_WINDING_FACTOR = 1.15;
+const OVERSHOOT_BIAS = 1.05; // 5% longer to err on the side of too long
 
 function getWaypointCount(distanceMiles) {
   if (distanceMiles < 5) return 4;
@@ -91,7 +92,7 @@ function polygonCentroid(polygon) {
 function generateWaypoints(startLat, startLng, distanceMiles, radiusOverride, boundary) {
   const count = getWaypointCount(distanceMiles);
   const targetCircumferenceMeters = distanceMiles * METERS_PER_MILE;
-  const radius = radiusOverride || targetCircumferenceMeters / (2 * Math.PI * ROAD_WINDING_FACTOR);
+  const radius = radiusOverride || (targetCircumferenceMeters / (2 * Math.PI * ROAD_WINDING_FACTOR)) * OVERSHOOT_BIAS;
 
   const randomOffset = Math.random() * 2 * Math.PI;
   const startLatRad = (startLat * Math.PI) / 180;
@@ -133,7 +134,9 @@ function adjustWaypoints(startLat, startLng, distanceMiles, actualDistanceMeters
   const currentCircumference = distanceMiles * METERS_PER_MILE;
   const currentRadius = currentCircumference / (2 * Math.PI * ROAD_WINDING_FACTOR);
 
-  const ratio = targetMeters / actualDistanceMeters;
+  // Bias the target slightly long so routes err toward too-long rather than too-short
+  const biasedTarget = targetMeters * OVERSHOOT_BIAS;
+  const ratio = biasedTarget / actualDistanceMeters;
   const adjustedRadius = currentRadius * Math.sqrt(ratio);
 
   return generateWaypoints(startLat, startLng, distanceMiles, adjustedRadius, boundary);
@@ -151,6 +154,7 @@ if (typeof module !== 'undefined' && module.exports) {
     getWaypointCount,
     METERS_PER_MILE,
     METERS_PER_DEGREE_LAT,
-    ROAD_WINDING_FACTOR
+    ROAD_WINDING_FACTOR,
+    OVERSHOOT_BIAS
   };
 }
