@@ -5,6 +5,7 @@ let currentPolyline = null;
 let waypointMarkers = [];
 let lastDistanceMiles = null;
 let lastActualDistanceMeters = null;
+let lastWaypoints = [];
 
 // Boundary state
 let boundaryMode = false;
@@ -25,6 +26,11 @@ const infoDistance = document.getElementById('info-distance');
 const infoDuration = document.getElementById('info-duration');
 const loadingEl = document.getElementById('loading');
 const errorEl = document.getElementById('error');
+const googleMapsLink = document.getElementById('google-maps-link');
+const directionsEl = document.getElementById('directions');
+const directionsToggle = document.getElementById('directions-toggle');
+const directionsToggleText = document.getElementById('directions-toggle-text');
+const directionsList = document.getElementById('directions-list');
 
 // --- Init ---
 
@@ -138,6 +144,14 @@ function initEvents() {
   setBoundaryBtn.addEventListener('click', toggleBoundaryMode);
   doneBoundaryBtn.addEventListener('click', finishBoundary);
   clearBoundaryBtn.addEventListener('click', clearBoundary);
+
+  directionsToggle.addEventListener('click', () => {
+    directionsEl.classList.toggle('expanded');
+    const isExpanded = directionsEl.classList.contains('expanded');
+    directionsToggleText.textContent = isExpanded
+      ? directionsToggleText.textContent.replace('Show', 'Hide')
+      : directionsToggleText.textContent.replace('Hide', 'Show');
+  });
 }
 
 // --- Start location ---
@@ -189,6 +203,10 @@ async function computeRoute(isRegenerate) {
   showLoading(true);
   hideError();
   routeInfo.hidden = true;
+  googleMapsLink.hidden = true;
+  directionsEl.hidden = true;
+  directionsEl.classList.remove('expanded');
+  directionsList.innerHTML = '';
   generateBtn.disabled = true;
   regenerateBtn.disabled = true;
 
@@ -242,6 +260,7 @@ async function computeRoute(isRegenerate) {
     }
 
     lastDistanceMiles = distanceMiles;
+    lastWaypoints = waypoints;
     drawRoute(routeData);
     showRouteInfo(routeData);
     regenerateBtn.disabled = false;
@@ -300,6 +319,85 @@ function showRouteInfo(routeData) {
     infoDuration.textContent = `${minutes}m`;
   }
   routeInfo.hidden = false;
+
+  buildGoogleMapsLink();
+  renderDirections(routeData);
+}
+
+function buildGoogleMapsLink() {
+  if (!startLocation || !lastWaypoints.length) {
+    googleMapsLink.hidden = true;
+    return;
+  }
+
+  const points = [
+    startLocation,
+    ...lastWaypoints,
+    startLocation
+  ];
+
+  const path = points
+    .map(p => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`)
+    .join('/');
+
+  googleMapsLink.href = `https://www.google.com/maps/dir/${path}?travelmode=walking`;
+  googleMapsLink.hidden = false;
+}
+
+function formatStepDistance(meters) {
+  if (meters >= 161) {
+    return `${(meters / 1609.34).toFixed(2)} mi`;
+  }
+  return `${Math.round(meters * 3.28084)} ft`;
+}
+
+function renderDirections(routeData) {
+  directionsList.innerHTML = '';
+
+  if (!routeData.legs || routeData.legs.length === 0) {
+    directionsEl.hidden = true;
+    return;
+  }
+
+  let stepNumber = 0;
+
+  routeData.legs.forEach(leg => {
+    if (!leg.steps) return;
+
+    leg.steps.forEach(step => {
+      stepNumber++;
+      const instruction = step.navigationInstruction?.instructions || 'Continue';
+      const distMeters = step.distanceMeters || 0;
+      const distDisplay = formatStepDistance(distMeters);
+
+      const li = document.createElement('li');
+
+      const numSpan = document.createElement('span');
+      numSpan.className = 'step-number';
+      numSpan.textContent = stepNumber;
+
+      const contentDiv = document.createElement('div');
+      contentDiv.className = 'step-content';
+
+      const instrDiv = document.createElement('div');
+      instrDiv.className = 'step-instruction';
+      instrDiv.textContent = instruction;
+
+      const distDiv = document.createElement('div');
+      distDiv.className = 'step-distance';
+      distDiv.textContent = distDisplay;
+
+      contentDiv.appendChild(instrDiv);
+      contentDiv.appendChild(distDiv);
+      li.appendChild(numSpan);
+      li.appendChild(contentDiv);
+      directionsList.appendChild(li);
+    });
+  });
+
+  directionsEl.hidden = stepNumber === 0;
+  directionsEl.classList.remove('expanded');
+  directionsToggleText.textContent = `Show Directions (${stepNumber} steps)`;
 }
 
 function showLoading(show) {

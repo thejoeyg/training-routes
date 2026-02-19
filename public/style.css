@@ -256,6 +256,115 @@ label {
   font-weight: 600;
 }
 
+/* Google Maps link button */
+#google-maps-link {
+  display: block;
+  padding: 12px;
+  background: #34a853;
+  color: #fff;
+  text-align: center;
+  text-decoration: none;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+
+#google-maps-link:hover {
+  background: #2d9249;
+}
+
+/* Directions panel */
+#directions {
+  display: flex;
+  flex-direction: column;
+}
+
+#directions-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+#directions-toggle:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+#directions-toggle-icon {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+#directions.expanded #directions-toggle-icon {
+  transform: rotate(180deg);
+}
+
+#directions-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+#directions.expanded #directions-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+#directions-list li {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+#directions-list li:last-child {
+  border-bottom: none;
+}
+
+.step-number {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--accent);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.step-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.step-instruction {
+  color: var(--text);
+}
+
+.step-distance {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
 #loading {
   display: flex;
   align-items: center;
