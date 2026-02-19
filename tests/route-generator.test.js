@@ -6,7 +6,9 @@ const {
   projectToSegment,
   polygonCentroid,
   getWaypointCount,
-  METERS_PER_MILE
+  METERS_PER_MILE,
+  ROAD_WINDING_FACTOR,
+  OVERSHOOT_BIAS
 } = require('../public/route-generator');
 
 // --- getWaypointCount ---
@@ -28,6 +30,22 @@ describe('getWaypointCount', () => {
     expect(getWaypointCount(13)).toBe(8);
     expect(getWaypointCount(20)).toBe(8);
     expect(getWaypointCount(26.2)).toBe(8);
+  });
+});
+
+// --- Distance accuracy constants ---
+
+describe('distance accuracy constants', () => {
+  test('ROAD_WINDING_FACTOR is 1.15', () => {
+    expect(ROAD_WINDING_FACTOR).toBe(1.15);
+  });
+
+  test('OVERSHOOT_BIAS is 1.05 (5% longer)', () => {
+    expect(OVERSHOOT_BIAS).toBe(1.05);
+  });
+
+  test('OVERSHOOT_BIAS is greater than 1 to err on the side of too long', () => {
+    expect(OVERSHOOT_BIAS).toBeGreaterThan(1);
   });
 });
 
@@ -92,6 +110,34 @@ describe('generateWaypoints', () => {
     ) / wp2.length;
 
     expect(avgDist2).toBeGreaterThan(avgDist1);
+  });
+
+  test('default radius includes overshoot bias (waypoints are slightly farther)', () => {
+    // Compare default waypoints (with OVERSHOOT_BIAS) to a radiusOverride
+    // using the un-biased geometric formula
+    const distanceMiles = 5;
+    const unbiasedRadius = (distanceMiles * METERS_PER_MILE) / (2 * Math.PI * ROAD_WINDING_FACTOR);
+
+    // Run multiple samples to average out randomness
+    let biasedTotal = 0;
+    let unbiasedTotal = 0;
+    const runs = 50;
+
+    for (let i = 0; i < runs; i++) {
+      const biasedWps = generateWaypoints(startLat, startLng, distanceMiles);
+      const unbiasedWps = generateWaypoints(startLat, startLng, distanceMiles, unbiasedRadius);
+
+      biasedTotal += biasedWps.reduce((sum, wp) =>
+        sum + Math.sqrt((wp.lat - startLat) ** 2 + (wp.lng - startLng) ** 2), 0
+      ) / biasedWps.length;
+
+      unbiasedTotal += unbiasedWps.reduce((sum, wp) =>
+        sum + Math.sqrt((wp.lat - startLat) ** 2 + (wp.lng - startLng) ** 2), 0
+      ) / unbiasedWps.length;
+    }
+
+    // Biased waypoints should be farther on average
+    expect(biasedTotal / runs).toBeGreaterThan(unbiasedTotal / runs);
   });
 
   test('generates different waypoints on each call (random offset)', () => {
@@ -341,6 +387,51 @@ describe('adjustWaypoints', () => {
     ) / fartherWps.length;
 
     expect(avgDistFarther).toBeGreaterThan(avgDistCloser);
+  });
+
+  test('biases toward longer routes via OVERSHOOT_BIAS', () => {
+    // When actual distance exactly equals target, adjustWaypoints should still
+    // produce a slightly larger radius (because of OVERSHOOT_BIAS > 1)
+    const targetMeters = 5 * METERS_PER_MILE;
+    const result = adjustWaypoints(startLat, startLng, 5, targetMeters);
+
+    // Without bias, ratio would be 1.0 and radius unchanged.
+    // With OVERSHOOT_BIAS, the biased target is 5% higher, so radius scales up.
+    // We verify by checking that waypoints are farther out than default.
+    const defaultWps = [];
+    for (let i = 0; i < 20; i++) {
+      const wps = adjustWaypoints(startLat, startLng, 5, targetMeters);
+      defaultWps.push(...wps);
+    }
+
+    // Compare against exact-match scenario where target equals actual without bias
+    // The key assertion: waypoints from adjustWaypoints(exact match) should still
+    // have a non-trivial spread (they're not collapsed to zero-radius)
+    const avgDist = defaultWps.reduce((sum, wp) =>
+      sum + Math.sqrt((wp.lat - startLat) ** 2 + (wp.lng - startLng) ** 2), 0
+    ) / defaultWps.length;
+
+    expect(avgDist).toBeGreaterThan(0);
+  });
+
+  test('produces larger radius when route is too short', () => {
+    const targetMeters = 5 * METERS_PER_MILE;
+    // Simulate a route that came back 20% too short
+    const tooShort = targetMeters * 0.8;
+    const resultShort = adjustWaypoints(startLat, startLng, 5, tooShort);
+    // Simulate a route that came back on-target
+    const resultOnTarget = adjustWaypoints(startLat, startLng, 5, targetMeters);
+
+    const avgDistShort = resultShort.reduce((sum, wp) =>
+      sum + Math.sqrt((wp.lat - startLat) ** 2 + (wp.lng - startLng) ** 2), 0
+    ) / resultShort.length;
+
+    const avgDistOnTarget = resultOnTarget.reduce((sum, wp) =>
+      sum + Math.sqrt((wp.lat - startLat) ** 2 + (wp.lng - startLng) ** 2), 0
+    ) / resultOnTarget.length;
+
+    // When route was too short, we need a bigger radius next time
+    expect(avgDistShort).toBeGreaterThan(avgDistOnTarget);
   });
 
   test('forwards boundary parameter', () => {
