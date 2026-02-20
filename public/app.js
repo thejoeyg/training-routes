@@ -442,12 +442,14 @@ function toggleBoundaryMode() {
 }
 
 function handleBoundaryClick(lat, lng) {
+  const index = boundaryVertices.length;
   boundaryVertices.push({ lat, lng });
 
-  // Add a small marker at the vertex
+  // Add a draggable marker at the vertex so it can be repositioned
   const marker = new google.maps.Marker({
     position: { lat, lng },
     map: map,
+    draggable: true,
     icon: {
       path: google.maps.SymbolPath.CIRCLE,
       scale: 6,
@@ -456,8 +458,24 @@ function handleBoundaryClick(lat, lng) {
       strokeColor: '#fff',
       strokeWeight: 2
     },
+    cursor: 'grab',
     zIndex: 50
   });
+
+  // When a vertex is dragged, update its position and refresh the preview
+  marker.addListener('dragend', () => {
+    const pos = marker.getPosition();
+    boundaryVertices[index] = { lat: pos.lat(), lng: pos.lng() };
+    updateBoundaryPreview();
+  });
+
+  // Live preview follows the drag
+  marker.addListener('drag', () => {
+    const pos = marker.getPosition();
+    boundaryVertices[index] = { lat: pos.lat(), lng: pos.lng() };
+    updateBoundaryPreview();
+  });
+
   boundaryMarkers.push(marker);
 
   // Update the live preview polyline
