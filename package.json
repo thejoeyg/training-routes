@@ -2,15 +2,15 @@
   "name": "training-routes",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": "20.x"
+  },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
+    "dev": "vercel dev",
     "test": "jest --verbose"
   },
-  "dependencies": {
-    "express": "^4.21.0"
-  },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "jest": "^29.7.0",
+    "vercel": "^39.3.0"
   }
 }

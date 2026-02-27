@@ -1,25 +1,13 @@
-const express = require('express');
-const path = require('path');
+module.exports = async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const API_KEY = process.env.GOOGLE_MAPS_API_KEY;
+  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Server misconfiguration: API key not set' });
+  }
 
-if (!API_KEY) {
-  console.error('GOOGLE_MAPS_API_KEY environment variable is required');
-  process.exit(1);
-}
-
-app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Serve API key for Maps JS loader
-app.get('/api/config', (req, res) => {
-  res.json({ apiKey: API_KEY });
-});
-
-// Proxy route computation to Google Routes API
-app.post('/api/route', async (req, res) => {
   const { origin, waypoints } = req.body;
 
   if (!origin || !waypoints || !Array.isArray(waypoints)) {
@@ -52,7 +40,7 @@ app.post('/api/route', async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Goog-Api-Key': API_KEY,
+        'X-Goog-Api-Key': apiKey,
         'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.polyline.encodedPolyline,routes.legs.distanceMeters,routes.legs.duration,routes.legs.polyline.encodedPolyline,routes.legs.steps.navigationInstruction,routes.legs.steps.distanceMeters,routes.legs.steps.staticDuration'
       },
       body: JSON.stringify(body)
@@ -73,8 +61,4 @@ app.post('/api/route', async (req, res) => {
     console.error('Failed to call Routes API:', err.message);
     res.status(500).json({ error: 'Failed to compute route' });
   }
-});
-
-app.listen(PORT, () => {
-  console.log(`Training Routes running at http://localhost:${PORT}`);
-});
+};
