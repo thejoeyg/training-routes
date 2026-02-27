@@ -504,3 +504,18 @@ label {
 .pac-icon {
   display: none;
 }
+
+footer {
+  text-align: center;
+  margin-top: 4px;
+}
+
+footer a {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+
+footer a:hover {
+  color: var(--text);
+}
