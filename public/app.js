@@ -294,11 +294,18 @@ function drawRoute(routeData) {
     map: map
   });
 
-  // Fit map to route
+  // Fit map to show the full route, accounting for the controls panel
   const bounds = new google.maps.LatLngBounds();
   path.forEach(point => bounds.extend(point));
   bounds.extend(startMarker.getPosition());
-  map.fitBounds(bounds, { top: 20, right: 20, bottom: 20, left: 360 });
+  lastWaypoints.forEach(wp => bounds.extend({ lat: wp.lat, lng: wp.lng }));
+  const controlsEl = document.getElementById('controls');
+  const panelWidth = controlsEl ? controlsEl.offsetWidth + 32 : 20;
+  const isMobile = window.innerWidth <= 768;
+  const padding = isMobile
+    ? { top: 20, right: 20, bottom: 340, left: 20 }
+    : { top: 20, right: 20, bottom: 20, left: panelWidth };
+  map.fitBounds(bounds, padding);
 }
 
 function clearRoute() {
