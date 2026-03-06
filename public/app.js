@@ -130,8 +130,7 @@ function initEvents() {
   // Preset buttons
   document.querySelectorAll('#presets button').forEach(btn => {
     btn.addEventListener('click', () => {
-      const miles = parseFloat(btn.dataset.miles);
-      distanceInput.value = useKm ? milesToKm(miles) : miles;
+      distanceInput.value = useKm ? parseFloat(btn.dataset.km) : parseFloat(btn.dataset.miles);
       document.querySelectorAll('#presets button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
@@ -160,10 +159,6 @@ function initEvents() {
 
 // --- Unit toggle ---
 
-function milesToKm(miles) {
-  return Math.round(miles * 1.60934 * 10) / 10;
-}
-
 function kmToMiles(km) {
   return km / 1.60934;
 }
@@ -175,13 +170,12 @@ function setUnit(km) {
 
   // Update preset labels
   document.querySelectorAll('#presets button').forEach(btn => {
-    const miles = parseFloat(btn.dataset.miles);
     if (btn.dataset.miles === '13.1') {
-      btn.textContent = km ? 'Half' : 'Half';
+      btn.textContent = 'Half';
     } else if (btn.dataset.miles === '26.2') {
-      btn.textContent = km ? 'Full' : 'Full';
+      btn.textContent = 'Full';
     } else {
-      btn.textContent = km ? `${milesToKm(miles)} km` : `${miles} mi`;
+      btn.textContent = km ? `${btn.dataset.km} km` : `${btn.dataset.miles} mi`;
     }
   });
 
@@ -194,8 +188,7 @@ function setUnit(km) {
 function syncPresetHighlight() {
   const val = parseFloat(distanceInput.value);
   document.querySelectorAll('#presets button').forEach(btn => {
-    const miles = parseFloat(btn.dataset.miles);
-    const presetVal = useKm ? milesToKm(miles) : miles;
+    const presetVal = parseFloat(useKm ? btn.dataset.km : btn.dataset.miles);
     btn.classList.toggle('active', presetVal === val);
   });
 }
