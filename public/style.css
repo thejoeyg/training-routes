@@ -134,9 +134,32 @@ label {
   border-color: var(--accent);
 }
 
-.unit {
-  font-size: 0.85rem;
+#unit-toggle {
+  display: flex;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+#unit-toggle button {
+  padding: 6px 10px;
+  background: var(--input-bg);
+  border: none;
   color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+#unit-toggle button:first-child {
+  border-right: 1px solid var(--input-border);
+}
+
+#unit-toggle button.active {
+  background: var(--accent);
+  color: #fff;
 }
 
 #presets {
