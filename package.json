@@ -9,6 +9,9 @@
     "dev": "vercel dev",
     "test": "jest --verbose"
   },
+  "dependencies": {
+    "@vercel/analytics": "^1.4.1"
+  },
   "devDependencies": {
     "jest": "^29.7.0",
     "vercel": "^39.3.0"
