@@ -6,6 +6,7 @@ let waypointMarkers = [];
 let lastDistanceMiles = null;
 let lastActualDistanceMeters = null;
 let lastWaypoints = [];
+let useKm = false;
 
 // Boundary state
 let boundaryMode = false;
@@ -31,6 +32,8 @@ const directionsEl = document.getElementById('directions');
 const directionsToggle = document.getElementById('directions-toggle');
 const directionsToggleText = document.getElementById('directions-toggle-text');
 const directionsList = document.getElementById('directions-list');
+const unitMiBtn = document.getElementById('unit-mi');
+const unitKmBtn = document.getElementById('unit-km');
 
 // --- Init ---
 
@@ -120,11 +123,14 @@ function initAutocomplete() {
 }
 
 function initEvents() {
+  // Unit toggle
+  unitMiBtn.addEventListener('click', () => setUnit(false));
+  unitKmBtn.addEventListener('click', () => setUnit(true));
+
   // Preset buttons
   document.querySelectorAll('#presets button').forEach(btn => {
     btn.addEventListener('click', () => {
-      const miles = parseFloat(btn.dataset.miles);
-      distanceInput.value = miles;
+      distanceInput.value = useKm ? parseFloat(btn.dataset.km) : parseFloat(btn.dataset.miles);
       document.querySelectorAll('#presets button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
@@ -132,10 +138,7 @@ function initEvents() {
 
   // Sync active preset with manual input
   distanceInput.addEventListener('input', () => {
-    const val = parseFloat(distanceInput.value);
-    document.querySelectorAll('#presets button').forEach(btn => {
-      btn.classList.toggle('active', parseFloat(btn.dataset.miles) === val);
-    });
+    syncPresetHighlight();
   });
 
   generateBtn.addEventListener('click', () => computeRoute(false));
@@ -152,6 +155,47 @@ function initEvents() {
       ? directionsToggleText.textContent.replace('Show', 'Hide')
       : directionsToggleText.textContent.replace('Hide', 'Show');
   });
+}
+
+// --- Unit toggle ---
+
+function kmToMiles(km) {
+  return km / 1.60934;
+}
+
+function setUnit(km) {
+  useKm = km;
+  unitMiBtn.classList.toggle('active', !km);
+  unitKmBtn.classList.toggle('active', km);
+
+  // Update preset labels
+  document.querySelectorAll('#presets button').forEach(btn => {
+    if (btn.dataset.miles === '13.1') {
+      btn.textContent = 'Half';
+    } else if (btn.dataset.miles === '26.2') {
+      btn.textContent = 'Full';
+    } else {
+      btn.textContent = km ? `${btn.dataset.km} km` : `${btn.dataset.miles} mi`;
+    }
+  });
+
+  // Update distance input max
+  distanceInput.max = km ? 100 : 50;
+
+  syncPresetHighlight();
+}
+
+function syncPresetHighlight() {
+  const val = parseFloat(distanceInput.value);
+  document.querySelectorAll('#presets button').forEach(btn => {
+    const presetVal = parseFloat(useKm ? btn.dataset.km : btn.dataset.miles);
+    btn.classList.toggle('active', presetVal === val);
+  });
+}
+
+function inputToMiles() {
+  const val = parseFloat(distanceInput.value);
+  return useKm ? kmToMiles(val) : val;
 }
 
 // --- Start location ---
@@ -194,9 +238,11 @@ function reverseGeocode(latLng) {
 async function computeRoute(isRegenerate) {
   if (!startLocation) return;
 
-  const distanceMiles = parseFloat(distanceInput.value);
+  const distanceMiles = inputToMiles();
   if (!distanceMiles || distanceMiles < 0.5 || distanceMiles > 50) {
-    showError('Enter a distance between 0.5 and 50 miles');
+    showError(useKm
+      ? 'Enter a distance between 0.8 and 80 km'
+      : 'Enter a distance between 0.5 and 50 miles');
     return;
   }
 
@@ -320,12 +366,14 @@ function clearRoute() {
 // --- UI helpers ---
 
 function showRouteInfo(routeData) {
-  const miles = (routeData.distanceMeters / 1609.34).toFixed(2);
+  const distDisplay = useKm
+    ? `${(routeData.distanceMeters / 1000).toFixed(2)} km`
+    : `${(routeData.distanceMeters / 1609.34).toFixed(2)} mi`;
   const totalSeconds = parseInt(routeData.duration.replace('s', ''));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
 
-  infoDistance.textContent = `${miles} mi`;
+  infoDistance.textContent = distDisplay;
   if (hours > 0) {
     infoDuration.textContent = `${hours}h ${minutes}m`;
   } else {
@@ -358,6 +406,12 @@ function buildGoogleMapsLink() {
 }
 
 function formatStepDistance(meters) {
+  if (useKm) {
+    if (meters >= 100) {
+      return `${(meters / 1000).toFixed(2)} km`;
+    }
+    return `${Math.round(meters)} m`;
+  }
   if (meters >= 161) {
     return `${(meters / 1609.34).toFixed(2)} mi`;
   }
