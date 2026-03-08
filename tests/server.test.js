@@ -138,10 +138,39 @@ describe('POST /api/route', () => {
     expect(capturedBody.destination.location.latLng.latitude).toBe(40.7128);
     expect(capturedBody.destination.location.latLng.longitude).toBe(-74.006);
     expect(capturedBody.intermediates).toHaveLength(2);
+    expect(capturedBody.intermediates[0].via).toBe(true);
     expect(capturedBody.intermediates[0].location.latLng.latitude).toBe(40.72);
+    expect(capturedBody.intermediates[1].via).toBe(true);
     expect(capturedBody.intermediates[1].location.latLng.latitude).toBe(40.71);
     expect(capturedBody.travelMode).toBe('WALK');
     expect(capturedBody.units).toBe('IMPERIAL');
+
+    delete global.fetch;
+  });
+
+  test('marks all intermediates as via:true to prevent backtracking', async () => {
+    const origin = { lat: 40.7128, lng: -74.006 };
+    const waypoints = [
+      { lat: 40.72, lng: -73.99 },
+      { lat: 40.71, lng: -73.98 },
+      { lat: 40.70, lng: -73.97 }
+    ];
+
+    let capturedBody;
+    global.fetch = jest.fn(async (url, options) => {
+      capturedBody = JSON.parse(options.body);
+      return { ok: true, json: async () => ({ routes: [] }) };
+    });
+
+    const req = { method: 'POST', body: { origin, waypoints } };
+    const res = mockRes();
+    await routeHandler(req, res);
+
+    // via:true tells the Routes API to treat waypoints as pass-through points
+    // rather than stopovers, which prevents out-and-back backtracking segments
+    capturedBody.intermediates.forEach((wp, i) => {
+      expect(wp.via).toBe(true);
+    });
 
     delete global.fetch;
   });
@@ -187,6 +216,9 @@ describe('POST /api/route', () => {
     expect(capturedBody.intermediates).toHaveLength(4);
     expect(capturedBody.intermediates[2].location.latLng.latitude).toBe(43.0);
     expect(capturedBody.intermediates[3].location.latLng.longitude).toBe(-70.0);
+    capturedBody.intermediates.forEach(wp => {
+      expect(wp.via).toBe(true);
+    });
 
     delete global.fetch;
   });

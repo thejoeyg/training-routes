@@ -26,6 +26,7 @@ module.exports = async function handler(req, res) {
       }
     },
     intermediates: waypoints.map(wp => ({
+      via: true,
       location: {
         latLng: { latitude: wp.lat, longitude: wp.lng }
       }
