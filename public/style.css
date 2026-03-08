@@ -51,11 +51,28 @@ body {
   overflow-y: auto;
 }
 
+#panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
 #controls h1 {
   font-size: 1.25rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  margin-bottom: 4px;
+}
+
+#github-link {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+
+#github-link:hover {
+  color: var(--text);
 }
 
 #intro {
@@ -528,17 +545,3 @@ label {
   display: none;
 }
 
-footer {
-  text-align: center;
-  margin-top: 4px;
-}
-
-footer a {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  text-decoration: none;
-}
-
-footer a:hover {
-  color: var(--text);
-}
